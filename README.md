@@ -9,7 +9,8 @@ design and recreate it on a WordPress + Elementor site using **native Elementor 
 ```
 elementor-mcp/
 ├── wp-plugin/
-│   └── xoopah-elementor-mcp.php   # WordPress companion plugin (REST bridge to Elementor)
+│   ├── elementor-mcp-bridge.php   # WordPress companion plugin (REST bridge to Elementor)
+│   └── elementor-mcp-bridge.zip   # same plugin, zipped for one-click WP upload
 └── mcp-server/                    # Node/TypeScript MCP server (talks to the plugin)
     ├── src/
     │   ├── index.ts               # MCP tools: create_page / get_page / update_element
@@ -36,21 +37,25 @@ elementor-mcp/
 ## Setup
 
 ### 1. WordPress plugin
-- Copy `wp-plugin/xoopah-elementor-mcp.php` into `wp-content/plugins/xoopah-elementor-mcp/`.
-- Activate **Xoopah Elementor MCP Bridge** in WP Admin → Plugins.
-- Create an **Application Password**: WP Admin → Users → Profile → Application Passwords.
+- **Easiest:** WP Admin → Plugins → Add New → Upload Plugin → upload `wp-plugin/elementor-mcp-bridge.zip` → Activate.
+  (Or manually copy `wp-plugin/elementor-mcp-bridge.php` into `wp-content/plugins/elementor-mcp-bridge/`.)
+- **Elementor must be active** on the site — the bridge won't work without it.
+- Activate **Elementor MCP Bridge** in WP Admin → Plugins.
+- Create an **Application Password**: WP Admin → Users → Profile → Application Passwords (copy it — shown once).
 
 ### 2. MCP server
 ```bash
-cd mcp-server
+git clone https://github.com/osama-humayun-spursol/elementor-mcp.git
+cd elementor-mcp/mcp-server
 cp .env.example .env      # fill in WP_BASE_URL / WP_USER / WP_APP_PASSWORD
-npm install
-npm run build
+npm install               # node_modules is not committed
+npm run build             # builds dist/ (also not committed)
 ```
 
 ### 3. Register the MCP with Claude Code
 ```bash
-claude mcp add elementor -- node D:/xoopahgit/elementor-mcp/mcp-server/dist/index.js
+# use the absolute path to dist/index.js on YOUR machine
+claude mcp add elementor -- node /absolute/path/to/elementor-mcp/mcp-server/dist/index.js
 ```
 (or add it to `.mcp.json`).
 
