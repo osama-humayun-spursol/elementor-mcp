@@ -18,6 +18,10 @@ export interface ContainerNode {
   type: 'container';
   direction?: 'row' | 'column';
   width?: 'full' | 'boxed';
+  /** Explicit width of this container as a flex item, in %. e.g. 50 => this column takes 50%. */
+  widthPct?: number;
+  /** Shrink this container to fit its content (width: fit-content) instead of the default full width — e.g. label pills. */
+  hug?: boolean;
   gap?: number;
   justify?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
   align?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
@@ -26,7 +30,8 @@ export interface ContainerNode {
   margin?: SpacingInput | number;
   background?: string;
   minHeight?: number;
-  borderRadius?: number;
+  /** Uniform radius (number) or per-corner via {top:topLeft, right:topRight, bottom:bottomRight, left:bottomLeft}. */
+  borderRadius?: number | SpacingInput;
   children?: Node[];
 }
 
@@ -108,6 +113,8 @@ function buildContainer(node: ContainerNode): ElementorElement {
   const s: Record<string, unknown> = {
     content_width: node.width ?? 'full'
   };
+  if (node.widthPct != null) s.width = slider(node.widthPct, '%');
+  else if (node.hug) s.width = { unit: 'custom', size: 'fit-content', sizes: [] };
   if (node.direction) s.flex_direction = node.direction;
   if (node.gap != null) s.flex_gap = gap(node.gap);
   if (node.justify) s.flex_justify_content = node.justify;
@@ -116,7 +123,11 @@ function buildContainer(node: ContainerNode): ElementorElement {
   if (node.padding) s.padding = dimensions(node.padding);
   if (node.margin) s.margin = dimensions(node.margin);
   if (node.minHeight != null) s.min_height = slider(node.minHeight);
-  if (node.borderRadius != null) s.border_radius = uniform(node.borderRadius);
+  if (node.borderRadius != null) {
+    s.border_radius = typeof node.borderRadius === 'number'
+      ? uniform(node.borderRadius)
+      : dimensions(node.borderRadius);
+  }
   if (node.background) {
     s.background_background = 'classic';
     s.background_color = node.background;
