@@ -1,8 +1,11 @@
 import { config, assertConfig } from './config.js';
 
+function basicToken(): string {
+  return Buffer.from(`${config.wpUser}:${config.wpAppPassword}`).toString('base64');
+}
+
 function authHeader(): string {
-  const token = Buffer.from(`${config.wpUser}:${config.wpAppPassword}`).toString('base64');
-  return `Basic ${token}`;
+  return `Basic ${basicToken()}`;
 }
 
 async function request<T>(path: string, init: RequestInit): Promise<T> {
@@ -15,6 +18,11 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
     headers: {
       'Content-Type': 'application/json',
       Authorization: authHeader(),
+      // Mirrors of Authorization: some hosts strip the real one at the proxy before PHP
+      // sees it — including, on some setups, any header whose name says "authorization".
+      // The bridge plugin falls back to whichever of these survives.
+      'X-XMCP-Authorization': authHeader(),
+      'X-XMCP-Key': basicToken(),
       ...(init.headers ?? {})
     }
   });

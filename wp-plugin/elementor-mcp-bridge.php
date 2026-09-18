@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Elementor MCP Bridge
  * Description: REST endpoints to create/read/edit Elementor pages programmatically (used by the Elementor MCP server).
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: MCP Bridge
  */
 
@@ -13,11 +13,73 @@ if ( ! defined( 'ABSPATH' ) ) {
 const XMCP_NS = 'xmcp/v1';
 
 /**
- * Local-dev convenience: WordPress only allows Application Passwords over HTTPS by default.
- * LocalWP/MAMP sites usually run on plain HTTP, so enable them here.
- * Safe for local development — remove (or guard) on a public production site.
+ * WordPress only allows Application Passwords over HTTPS. Local dev sites (LocalWP,
+ * XAMPP, MAMP) run on plain HTTP, so re-enable them there — and only there.
+ * On a public HTTPS site this filter never runs; WordPress allows them natively.
  */
-add_filter( 'wp_is_application_passwords_available', '__return_true' );
+add_filter( 'wp_is_application_passwords_available', function ( $available ) {
+	if ( $available || is_ssl() ) {
+		return $available;
+	}
+
+	$host = isset( $_SERVER['HTTP_HOST'] ) ? strtolower( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+	$host = preg_replace( '/:\d+$/', '', $host );
+
+	$is_local = in_array( $host, [ 'localhost', '127.0.0.1', '::1' ], true )
+		|| preg_match( '/\.(local|test|localhost)$/', $host );
+
+	return $is_local ? true : $available;
+} );
+
+/**
+ * Some hosts (nginx/FastCGI proxies, SiteGround among them) strip the `Authorization`
+ * header before PHP sees it, so WordPress never receives the Application Password and
+ * every request looks logged-out. The MCP client therefore also sends the exact same
+ * Basic credentials in `X-XMCP-Authorization`, which proxies leave alone.
+ *
+ * Here we copy those credentials into PHP_AUTH_USER/PHP_AUTH_PW and then get out of the
+ * way: WordPress core still validates them through its normal Application Password flow.
+ * Nothing is trusted without a valid password, and this only applies to xmcp/v1 requests.
+ */
+function xmcp_restore_basic_auth() {
+	if ( ! empty( $_SERVER['PHP_AUTH_USER'] ) && ! empty( $_SERVER['PHP_AUTH_PW'] ) ) {
+		return;
+	}
+
+	$uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+	if ( false === strpos( $uri, XMCP_NS ) ) {
+		return;
+	}
+
+	$header = '';
+	foreach ( [ 'HTTP_X_XMCP_KEY', 'HTTP_X_XMCP_AUTHORIZATION', 'HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION' ] as $key ) {
+		if ( ! empty( $_SERVER[ $key ] ) ) {
+			$header = wp_unslash( $_SERVER[ $key ] );
+			break;
+		}
+	}
+
+	// Accept both "Basic <base64>" and a bare base64 blob: some proxies drop headers
+	// whose name or value looks like an Authorization header.
+	if ( 0 === stripos( $header, 'basic ' ) ) {
+		$header = substr( $header, 6 );
+	}
+
+	if ( '' === trim( $header ) ) {
+		return;
+	}
+
+	$decoded = base64_decode( trim( $header ), true );
+	if ( ! $decoded || false === strpos( $decoded, ':' ) ) {
+		return;
+	}
+
+	list( $user, $pass ) = explode( ':', $decoded, 2 );
+
+	$_SERVER['PHP_AUTH_USER'] = $user;
+	$_SERVER['PHP_AUTH_PW']   = $pass;
+}
+xmcp_restore_basic_auth();
 
 add_action( 'rest_api_init', function () {
 	register_rest_route( XMCP_NS, '/page', [

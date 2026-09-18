@@ -1,7 +1,20 @@
+/**
+ * Read process.env lazily, never at module-init time.
+ *
+ * ESM evaluates every static import before the importing module's own top-level
+ * code, so index.ts's `loadEnv()` call runs *after* this module is initialised.
+ * Capturing process.env here at init would therefore always capture empty values.
+ */
 export const config = {
-  wpBaseUrl: process.env.WP_BASE_URL ?? '',
-  wpUser: process.env.WP_USER ?? '',
-  wpAppPassword: process.env.WP_APP_PASSWORD ?? ''
+  get wpBaseUrl(): string {
+    return process.env.WP_BASE_URL ?? '';
+  },
+  get wpUser(): string {
+    return process.env.WP_USER ?? '';
+  },
+  get wpAppPassword(): string {
+    return process.env.WP_APP_PASSWORD ?? '';
+  }
 };
 
 export function assertConfig(): void {

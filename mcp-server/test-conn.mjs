@@ -26,5 +26,5 @@ console.log('Base URL:', base, '| user:', user, '| app-pw length:', pass.length)
 
 await hit('1. WP REST reachable', `${base}/wp-json/`);
 await hit('2. Plugin + auth', `${base}/wp-json/xmcp/v1/page/0`, {
-  headers: { Authorization: auth }
+  headers: { Authorization: auth, 'X-XMCP-Authorization': auth }
 });
