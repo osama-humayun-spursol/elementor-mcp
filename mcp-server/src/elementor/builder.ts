@@ -120,8 +120,8 @@ function buildContainer(node: ContainerNode): ElementorElement {
   if (node.justify) s.flex_justify_content = node.justify;
   if (node.align) s.flex_align_items = node.align;
   if (node.wrap) s.flex_wrap = node.wrap;
-  if (node.padding) s.padding = dimensions(node.padding);
-  if (node.margin) s.margin = dimensions(node.margin);
+  if (node.padding != null) s.padding = dimensions(node.padding);
+  if (node.margin != null) s.margin = dimensions(node.margin);
   if (node.minHeight != null) s.min_height = slider(node.minHeight);
   if (node.borderRadius != null) {
     s.border_radius = typeof node.borderRadius === 'number'

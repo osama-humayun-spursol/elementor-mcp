@@ -73,7 +73,7 @@ Node types:
 Rules:
 - **Every page section is its own top-level container** in `elements` (hero, features, CTA…). Never wrap the whole page in one outer container.
 - Mirror Figma auto-layout: a horizontal auto-layout = `direction:"row"` container; its columns = child containers with `widthPct` (they must add up to ≤100 minus gaps, e.g. 48 + 48 with a gap).
-- Inner containers get 10px padding by default. Where alignment matters pass `padding: {top:0,right:0,bottom:0,left:0}` — a plain `padding: 0` is ignored by the builder (falsy).
+- Inner containers get 10px padding by default. Set `padding: 0` on inner/layout-only containers where alignment matters, so the offsets match Figma.
 - Upload images first (WP media endpoint) and pass `url` + `imageId`.
 - The spec has no responsive fields. Build desktop first, then add `_tablet`/`_mobile` settings with `update_element` (e.g. `flex_direction_tablet: "column"`, `width_tablet: {unit:"%",size:100}`), or use `raw` nodes.
 
@@ -82,7 +82,7 @@ Example (hero with two columns + CTA section):
 { "title": "Landing", "status": "draft", "elements": [
   { "type": "container", "direction": "row", "width": "boxed", "gap": 40, "align": "center",
     "padding": { "top": 96, "right": 24, "bottom": 96, "left": 24 }, "children": [
-      { "type": "container", "widthPct": 50, "gap": 24, "padding": { "top": 0, "right": 0, "bottom": 0, "left": 0 }, "children": [
+      { "type": "container", "widthPct": 50, "gap": 24, "padding": 0, "children": [
           { "type": "container", "hug": true, "background": "#EEF", "borderRadius": 999,
             "padding": { "top": 6, "right": 14, "bottom": 6, "left": 14 },
             "children": [ { "type": "text", "html": "New" } ] },
@@ -90,7 +90,7 @@ Example (hero with two columns + CTA section):
             "typography": { "fontFamily": "<site font>", "fontSize": 56, "fontWeight": 600, "lineHeight": 1.1 } },
           { "type": "text", "html": "<p>Supporting copy.</p>" },
           { "type": "button", "text": "Get started", "link": "/signup", "borderRadius": 8 } ] },
-      { "type": "container", "widthPct": 46, "padding": { "top": 0, "right": 0, "bottom": 0, "left": 0 }, "children": [
+      { "type": "container", "widthPct": 46, "padding": 0, "children": [
           { "type": "image", "url": "<uploaded url>", "imageId": 123, "alt": "Product screenshot" } ] } ] },
   { "type": "container", "direction": "column", "align": "center", "gap": 16, "background": "#111",
     "padding": { "top": 80, "right": 24, "bottom": 80, "left": 24 }, "children": [
